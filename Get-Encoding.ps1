@@ -12,7 +12,7 @@ function Get-Encoding {
         [Switch] $CodePage,
         [Parameter(ParameterSetName = "C")]
         [Switch] $Language,
-        [Parameter(ParameterSetName = "C")]
+        [Parameter(ParameterSetName = "D")]
         [Switch] $FullName
     )
     # 獲取編碼
