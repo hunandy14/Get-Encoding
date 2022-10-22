@@ -57,3 +57,4 @@ Get-Encoding -System -Language
 
 1. 可查詢系統編碼 （`[Text.Encoding]::Default` 返回的是powershell編碼，而不是作業系統的）
 2. powershell 內定函式使用的編碼名稱是 utf8 而不是 C# 標準名稱的 utf-8。增加這個容錯兩者都可輸入
+3. 可接受字串型態的數字 [string]'65001' 當作輸入項
