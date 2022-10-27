@@ -15,6 +15,11 @@ function Get-Encoding {
         [Parameter(ParameterSetName = "D")]
         [Switch] $FullName
     )
+    # 改變預設值為指定編碼 (!危險參數!::一旦指定了Powershell不重啟都會一直有效)
+    if ((!$Encoding) -and $Script:__EnvDefaultEncoding__) { $Encoding = $Script:__EnvDefaultEncoding__ }
+    # 改變預設值為系統語言 (權限低於上方的Encoding)
+    if ($Script:__EnvSystemEncodingBool__) { $SystemEncoding = $Script:__EnvSystemEncodingBool__ }
+
     # 獲取編碼
     if ($Encoding) {
         if ($Encoding -match "^\d+$"){
@@ -80,3 +85,9 @@ function Get-Encoding {
 #         Get-Encoding '932' -FullName|Out-Null
 #     }
 # }
+#
+# $__EnvDefaultEncoding__=932
+# $__EnvDefaultEncoding__=$null
+# $__EnvSystemEncodingBool__=$true
+# $__EnvSystemEncodingBool__=$null
+# (Get-Encoding).EncodingName
