@@ -4,44 +4,32 @@ function Get-Encoding {
     param (
         [Parameter(Position = 0, ParameterSetName = "")]
         [Object] $Encoding,
-        [Parameter(ParameterSetName = "")]
-        [Switch] $SystemEncoding,
-        [Parameter(ParameterSetName = "A")]
+        [Parameter(ParameterSetName = "WebName")]
         [Switch] $WebName,
-        [Parameter(ParameterSetName = "B")]
+        [Parameter(ParameterSetName = "CodePage")]
         [Switch] $CodePage,
-        [Parameter(ParameterSetName = "C")]
+        [Parameter(ParameterSetName = "Language")]
         [Switch] $Language,
-        [Parameter(ParameterSetName = "D")]
+        [Parameter(ParameterSetName = "FullName")]
         [Switch] $FullName
     )
-    # 改變預設值為指定編碼 (!危險參數!::一旦指定了Powershell不重啟都會一直有效)
-    if ((!$Encoding) -and $Script:__EnvDefaultEncoding__) { $Encoding = $Script:__EnvDefaultEncoding__ }
-    # 改變預設值為系統語言 (權限低於上方的Encoding)
-    if ($Script:__EnvSystemEncodingBool__) { $SystemEncoding = $Script:__EnvSystemEncodingBool__ }
-
+    
     # 獲取編碼
-    if ($Encoding) {
-        if ($Encoding -match "^\d+$"){
-            $Encoding = [int]$Encoding
-        } else {
-            if ('UTF8' -eq $Encoding) { $Encoding = 'UTF-8' }
-        }
-        # 獲取編碼
-        try {
-            $Enc = [Text.Encoding]::GetEncoding($Encoding)
-        } catch {
-            Write-Error "Encoding `"$Encoding`" is not a supported encoding name."; return $null
-        }
-    # 預設編碼
-    } else {
-        if ($SystemEncoding) {
-            if (!$__SysEnc__) { $Script:__SysEnc__ = [Text.Encoding]::GetEncoding((powershell -nop "([Text.Encoding]::Default).WebName")) }
-            $Enc = $__SysEnc__
-        } else {
-            $Enc = [Text.Encoding]::Default
+    if (!$Encoding) { # 系統語言編碼
+        if (!$script:__SysEnc__) { $script:__SysEnc__ = [Text.Encoding]::GetEncoding((powershell -nop "([Text.Encoding]::Default).WebName")) }
+        $Enc = $script:__SysEnc__
+    } else { # 自定編碼
+        switch ($Encoding) {
+            'UTF8'    { $Enc = New-Object System.Text.UTF8Encoding $False; break }
+            'UTF8BOM' { $Enc = New-Object System.Text.UTF8Encoding $True; break }
+            'Default' { $Enc = [Text.Encoding]::Default; break } # 終端機本身的預設編碼
+            default {
+                if ($Encoding -match '^\d+$') { $Encoding = [int]$Encoding }
+                try { $Enc = [Text.Encoding]::GetEncoding($Encoding) } catch { Write-Error $_ -EA Stop }
+            }
         }
     }
+    
     # 輸出
     if ($WebName) {
         return $Enc.WebName
@@ -55,21 +43,22 @@ function Get-Encoding {
         return $matches[1]
     } return $Enc
 } # Get-Encoding
-
+# 各型態測試
 # (Get-Encoding).EncodingName
-# (Get-Encoding -SystemEncoding).EncodingName
+# (Get-Encoding 'Default').EncodingName
+# (Get-Encoding Default).EncodingName
 # (Get-Encoding 'utf8').EncodingName
 # (Get-Encoding utf8).EncodingName
 # (Get-Encoding 932).EncodingName
 # (Get-Encoding '932').EncodingName
 # (Get-Encoding ([double]932.0)).EncodingName
 # (Get-Encoding 'GB2312').EncodingName
-#
+# 錯誤測試
 # (Get-Encoding 123156).EncodingName
 # (Get-Encoding 'AAAA').EncodingName
-# (Get-Encoding '111' -SystemEncoding).EncodingName
-#
-# Get-Encoding 932 -SystemEncoding
+# (Get-Encoding '111').EncodingName
+# 選用參數測試
+# Get-Encoding 932 -WebName
 # Get-Encoding 932 -CodePage
 # Get-Encoding 932 -Language
 # Get-Encoding 932 -FullName
@@ -85,9 +74,3 @@ function Get-Encoding {
 #         Get-Encoding '932' -FullName|Out-Null
 #     }
 # }
-#
-# $__EnvDefaultEncoding__=932
-# $__EnvDefaultEncoding__=$null
-# $__EnvSystemEncodingBool__=$true
-# $__EnvSystemEncodingBool__=$null
-# (Get-Encoding).EncodingName
