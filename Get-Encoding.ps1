@@ -19,13 +19,17 @@ function Get-Encoding {
         if (!$script:__SysEnc__) { $script:__SysEnc__ = [Text.Encoding]::GetEncoding((powershell -nop "([Text.Encoding]::Default).WebName")) }
         $Enc = $script:__SysEnc__
     } else { # 自定編碼
-        switch ($Encoding) {
-            'UTF8'    { $Enc = New-Object System.Text.UTF8Encoding $False; break }
-            'UTF8BOM' { $Enc = New-Object System.Text.UTF8Encoding $True; break }
-            'Default' { $Enc = [Text.Encoding]::Default; break } # 終端機本身的預設編碼
-            default {
-                if ($Encoding -match '^\d+$') { $Encoding = [int]$Encoding }
-                try { $Enc = [Text.Encoding]::GetEncoding($Encoding) } catch { Write-Error $_ -EA Stop }
+        if ($Encoding -is [Text.Encoding]) {
+            $Enc = $Encoding
+        } else { 
+            switch ($Encoding) {
+                'UTF8'    { $Enc = New-Object System.Text.UTF8Encoding $False; break }
+                'UTF8BOM' { $Enc = New-Object System.Text.UTF8Encoding $True; break }
+                'Default' { $Enc = [Text.Encoding]::Default; break } # 終端機本身的預設編碼
+                default {
+                    if ($Encoding -match '^\d+$') { $Encoding = [int]$Encoding }
+                    try { $Enc = [Text.Encoding]::GetEncoding($Encoding) } catch { Write-Error $_ -EA Stop }
+                }
             }
         }
     }
@@ -53,6 +57,8 @@ function Get-Encoding {
 # (Get-Encoding '932').EncodingName
 # (Get-Encoding ([double]932.0)).EncodingName
 # (Get-Encoding 'GB2312').EncodingName
+# (Get-Encoding ([Text.Encoding]::GetEncoding(65001))).EncodingName
+
 # 錯誤測試
 # (Get-Encoding 123156).EncodingName
 # (Get-Encoding 'AAAA').EncodingName
